@@ -3,8 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 android {
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     namespace = "com.islam9lam.namazwidget"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.islam9lam.namazwidget"
         minSdk = 26
@@ -19,4 +26,5 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("org.jsoup:jsoup:1.18.3")
+    implementation("com.batoulapps.adhan:adhan:1.2.1")
 }

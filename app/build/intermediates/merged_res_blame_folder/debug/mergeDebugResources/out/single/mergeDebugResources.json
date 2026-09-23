@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.islam9lam.namazwidget.app-debug-40:/layout_widget_prayer.xml.flat",
+        "source": "com.islam9lam.namazwidget.app-main-42:/layout/widget_prayer.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-debug-40:/drawable_widget_bg.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-main-42:/drawable/widget_bg.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-debug-40:/layout_widget_prayer.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-main-42:/layout/widget_prayer.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-debug-40:/xml_prayer_widget_info.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.7.1/com.islam9lam.namazwidget.app-main-42:/xml/prayer_widget_info.xml"
+    }
+]
