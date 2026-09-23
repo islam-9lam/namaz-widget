@@ -1,21 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root"
- android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
- android:padding="14dp" android:background="@drawable/widget_bg">
- <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
-  <TextView android:id="@+id/city" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="#FFFFFFFF" android:textStyle="bold" android:textSize="13sp"/>
-  <TextView android:id="@+id/qibla" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCFFFFFF" android:textSize="11sp"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+ android:orientation="vertical" android:gravity="center_vertical" android:padding="15dp"
+ android:background="@drawable/widget_bg">
+
+ <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:orientation="horizontal" android:gravity="center_vertical">
+  <TextView android:id="@+id/city" android:layout_width="0dp" android:layout_height="wrap_content"
+   android:layout_weight="1" android:textColor="#CCFFFFFF" android:textSize="11sp"
+   android:textStyle="bold" android:maxLines="1"/>
+  <TextView android:id="@+id/qibla" android:layout_width="wrap_content" android:layout_height="wrap_content"
+   android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1"/>
  </LinearLayout>
- <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical">
-  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-   <TextView android:id="@+id/currentName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#BFFFFFFF" android:textSize="11sp"/>
-   <TextView android:id="@+id/currentTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFFFF" android:textStyle="bold" android:textSize="28sp"/>
+
+ <TextView android:id="@+id/currentLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:layout_marginTop="4dp" android:textColor="#DFFFFFFF" android:textSize="11sp"/>
+
+ <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+  android:orientation="horizontal" android:gravity="center_vertical">
+  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+   android:orientation="horizontal" android:gravity="center_vertical">
+   <TextView android:id="@+id/nextName" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:textColor="#FFFFFFFF" android:textSize="25sp" android:textStyle="bold" android:maxLines="1"/>
+   <TextView android:id="@+id/nextTime" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginLeft="8dp" android:textColor="#FFFFFFFF" android:textSize="25sp"
+    android:textStyle="bold" android:maxLines="1"/>
   </LinearLayout>
-  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-   <TextView android:id="@+id/nextName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#BFFFFFFF" android:textSize="11sp"/>
-   <TextView android:id="@+id/nextTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFFFF" android:textStyle="bold" android:textSize="23sp"/>
-   <TextView android:id="@+id/countdown" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E6FFFFFF" android:textSize="11sp"/>
+  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+   android:orientation="vertical" android:gravity="right">
+   <TextView android:id="@+id/currentPrayer" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:textColor="#E6FFFFFF" android:textSize="11sp" android:textStyle="bold" android:maxLines="1"/>
+   <Chronometer android:id="@+id/countdown" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:textColor="#FFFFFFFF" android:textSize="17sp" android:textStyle="bold" android:maxLines="1"/>
   </LinearLayout>
  </LinearLayout>
- <TextView android:id="@+id/others" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:textColor="#BFFFFFFF" android:textSize="10sp"/>
+
+ <TextView android:id="@+id/hint" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:textColor="#E6FFFFFF" android:textSize="11sp" android:maxLines="1" android:ellipsize="end"/>
+ <TextView android:id="@+id/others" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:layout_marginTop="5dp" android:textColor="#BFFFFFFF" android:textSize="9sp"
+  android:maxLines="1" android:ellipsize="end"/>
 </LinearLayout>
