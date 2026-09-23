@@ -1,0 +1,15 @@
+R_DEF: Internal format may change without notice
+local
+drawable widget_bg
+id city
+id countdown
+id currentLabel
+id currentPrayer
+id event
+id hint
+id nextName
+id nextTime
+id root
+layout widget_prayer
+style Theme.NamazWidget
+xml prayer_widget_info
