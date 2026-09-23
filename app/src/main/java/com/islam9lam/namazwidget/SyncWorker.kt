@@ -6,6 +6,8 @@ class SyncWorker(ctx:Context,p:WorkerParameters):Worker(ctx,p){
  override fun doWork():Result=try{
   val city=Store.city(applicationContext); val now=YearMonth.now()
   listOf(now,now.plusMonths(1)).forEach{ym->val d=Sources.fetch(city,ym);if(d.isNotEmpty())Store.save(applicationContext,"$city-$ym",d)}
-  PrayerWidget.refreshAll(applicationContext); Result.success()
+  PrayerWidget.refreshAll(applicationContext)
+  PrayerAod.refresh(applicationContext)
+  Result.success()
  }catch(e:Exception){Result.retry()}
 }
