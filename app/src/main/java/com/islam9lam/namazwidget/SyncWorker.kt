@@ -1,30 +1,94 @@
 package com.islam9lam.namazwidget
 
 import android.content.Context
-import androidx.work.Worker
-import androidx.work.WorkerParameters
-import androidx.work.workDataOf
+import androidx.work.*
 import java.time.YearMonth
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
-class SyncWorker(ctx:Context,p:WorkerParameters):Worker(ctx,p){
- companion object {const val KEY_MANUAL="manual";const val KEY_MESSAGE="message"}
+class SyncWorker(
+    ctx: Context,
+    p: WorkerParameters
+) : Worker(ctx, p) {
 
- override fun doWork():Result=try{
-  val city=Store.selectedCity(applicationContext)
-  val now=ZonedDateTime.now(ZoneId.of(city.timeZone))
-  val month=YearMonth.from(now)
-  val current=Sources.fetch(city,month)
-  val next=Sources.fetch(city,month.plusMonths(1))
-  Store.save(applicationContext,"${city.name}-$month",current)
-  Store.save(applicationContext,"${city.name}-${month.plusMonths(1)}",next)
-  Store.setLastCalculation(applicationContext,now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
-  PrayerWidget.refreshAll(applicationContext)
-  PrayerAod.refresh(applicationContext)
-  Result.success(workDataOf(KEY_MESSAGE to "Готово · ${current.size+next.size} дней рассчитано офлайн"))
- }catch(e:Exception){
-  Result.failure(workDataOf(KEY_MESSAGE to "Ошибка расчёта: ${e.message?:e.javaClass.simpleName}"))
- }
+    override fun doWork(): Result = try {
+
+        val cityObj =
+            CityClock.city(applicationContext)
+
+        val city =
+            cityObj.name
+
+        // Текущий месяц определяем по часовому поясу
+        // выбранного города, а не телефона.
+        val ym = YearMonth.from(
+            CityClock.date(applicationContext)
+        )
+
+        // Передаём сам объект City.
+        // Это важно для произвольных городов:
+        // координаты и timezone берутся из сохранённого City.
+        val result =
+            Sources.fetch(cityObj, ym)
+
+        Store.save(
+            applicationContext,
+            "$city-$ym",
+            result.days
+        )
+
+        val saved = result.days.size
+        val source = result.source
+
+        val cityNow =
+            CityClock.now(applicationContext)
+
+        val cachedUntil =
+            ym.atEndOfMonth()
+                .toString()
+
+        applicationContext
+            .getSharedPreferences("namaz", 0)
+            .edit()
+            .putString(
+                "source",
+                source
+            )
+            .putString(
+                "last_successful_update",
+                cityNow.toString()
+            )
+            .putString(
+                "cached_until",
+                cachedUntil
+            )
+            .apply()
+
+        Store.setSyncStatus(
+            applicationContext,
+            "Готово: $city. " +
+                "$saved дней. " +
+                "Источник: $source. " +
+                "Офлайн до $cachedUntil"
+        )
+
+        Store.markSourcesRestored(applicationContext)
+
+        PrayerWidget.refreshAll(
+            applicationContext
+        )
+
+        Result.success()
+
+    } catch (e: Exception) {
+
+        // Старый кэш не удаляем.
+        // Если сети нет, сохранённое расписание
+        // текущего месяца продолжает работать.
+        Store.setSyncStatus(
+            applicationContext,
+            "Не удалось обновить: " +
+                (e.message ?: e.javaClass.simpleName)
+        )
+
+        Result.retry()
+    }
 }

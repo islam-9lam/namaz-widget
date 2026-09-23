@@ -5,147 +5,672 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
+import android.os.Build
+import android.os.Looper
 import android.view.Gravity
 import android.view.Surface
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.Space
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class QiblaActivity:AppCompatActivity(),SensorEventListener{
- private lateinit var sensorManager:SensorManager
- private lateinit var locationManager:LocationManager
- private var rotationSensor:Sensor?=null
- private lateinit var arrow:TextView
- private lateinit var heading:TextView
- private lateinit var status:TextView
- private lateinit var bearingLabel:TextView
- private var qiblaBearing=0
- private var currentRotation=0f
+class QiblaActivity : AppCompatActivity(), SensorEventListener {
 
- private val permission=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){values->
-  if(values.values.any{it})findLocation() else useSelectedCity("Геолокация не разрешена")
- }
+    private lateinit var sensorManager: SensorManager
+    private lateinit var locationManager: LocationManager
 
- override fun onCreate(state:Bundle?){
-  super.onCreate(state)
-  WindowCompat.setDecorFitsSystemWindows(window,false)
-  window.statusBarColor=Color.rgb(7,25,22);window.navigationBarColor=Color.rgb(7,25,22)
-  sensorManager=getSystemService(Context.SENSOR_SERVICE) as SensorManager
-  locationManager=getSystemService(Context.LOCATION_SERVICE) as LocationManager
-  rotationSensor=sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-  buildScreen();requestLocation()
- }
+    private var rotationSensor: Sensor? = null
 
- private fun buildScreen(){
-  val bg=Color.rgb(7,25,22);val surface=Color.rgb(14,42,36);val primary=Color.rgb(242,247,245);val secondary=Color.rgb(174,201,193);val gold=Color.rgb(225,190,105)
-  val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(24),dp(30),dp(24),dp(30));setBackgroundColor(bg)}
-  ViewCompat.setOnApplyWindowInsetsListener(root){view,insets->
-   val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
-   view.setPadding(dp(24),dp(30)+bars.top,dp(24),dp(30)+bars.bottom)
-   insets
-  }
-  val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-  top.addView(Button(this).apply{text="←";textSize=20f;isAllCaps=false;setOnClickListener{finish()}})
-  top.addView(label("Кыбла",28f,primary,true),LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f).apply{leftMargin=dp(12)})
-  root.addView(top,LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT))
-  root.addView(space(28))
-  bearingLabel=label("Определяю направление…",15f,secondary).apply{gravity=Gravity.CENTER}
-  root.addView(bearingLabel)
-  root.addView(space(24))
-  val compass=FrameLayout(this).apply{background=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(surface);setStroke(dp(1),Color.rgb(45,90,78))};elevation=dp(3).toFloat()}
-  arrow=TextView(this).apply{text="↑";textSize=105f;gravity=Gravity.CENTER;setTextColor(gold)}
-  compass.addView(arrow,FrameLayout.LayoutParams(dp(240),dp(240),Gravity.CENTER))
-  compass.addView(label("С",15f,secondary,true).apply{gravity=Gravity.CENTER},FrameLayout.LayoutParams(dp(40),dp(40),Gravity.TOP or Gravity.CENTER_HORIZONTAL))
-  root.addView(compass,LinearLayout.LayoutParams(dp(270),dp(270)))
-  root.addView(space(26))
-  heading=label(if(rotationSensor==null)"Датчик компаса недоступен" else "Подготовка компаса…",19f,primary,true).apply{gravity=Gravity.CENTER}
-  root.addView(heading)
-  status=label("Поворачивайте телефон плавно",14f,secondary).apply{gravity=Gravity.CENTER;setPadding(0,dp(10),0,0)}
-  root.addView(status)
-  setContentView(root)
- }
+    private lateinit var arrow: TextView
+    private lateinit var headingText: TextView
+    private lateinit var statusText: TextView
+    private lateinit var bearingText: TextView
 
- private fun requestLocation(){
-  val fine=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
-  val coarse=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED
-  if(fine||coarse)findLocation() else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
- }
+    private var qiblaBearing: Int? = null
+    private var currentRotation = 0f
 
- private fun findLocation(){
-  val fine=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
-  val coarse=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED
-  if(!fine&&!coarse){useSelectedCity("Нет доступа к геолокации");return}
-  val last=runCatching{locationManager.getProviders(true).mapNotNull{provider->runCatching{locationManager.getLastKnownLocation(provider)}.getOrNull()}.maxByOrNull{it.time}}.getOrNull()
-  if(last!=null)useLocation(last) else{
-   val provider=when{locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)->LocationManager.GPS_PROVIDER;locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)->LocationManager.NETWORK_PROVIDER;else->null}
-   if(provider==null){useSelectedCity("Геолокация выключена")}
-   else runCatching{
-    if(Build.VERSION.SDK_INT>=30){
-     locationManager.getCurrentLocation(provider,null,mainExecutor){location->if(location!=null)useLocation(location) else useSelectedCity("Местоположение не найдено")}
-    }else{
-     @Suppress("DEPRECATION")
-     locationManager.requestSingleUpdate(provider,android.location.LocationListener{location->useLocation(location)},null)
+    private val locationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+
+            val granted =
+                permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+            if (granted) {
+                findLocation()
+            } else {
+                qiblaBearing = null
+                headingText.text = "Нужен доступ к местоположению"
+                bearingText.text = ""
+                statusText.text =
+                    "Без текущих координат направление Кыблы определить нельзя."
+            }
+        }
+
+    private fun dp(v: Int) =
+        (v * resources.displayMetrics.density).toInt()
+
+    private fun label(
+        value: String,
+        size: Float,
+        bold: Boolean = false
+    ) = TextView(this).apply {
+
+        text = value
+        textSize = size
+
+        setTextColor(
+            Color.rgb(35, 35, 40)
+        )
+
+        if (bold) {
+            setTypeface(
+                typeface,
+                Typeface.BOLD
+            )
+        }
     }
-   }.onFailure{useSelectedCity("Не удалось получить координаты")}
-  }
- }
 
- private fun useLocation(location:Location){
-  qiblaBearing=Qibla.bearing(location.latitude,location.longitude)
-  bearingLabel.text="Направление Кыблы: $qiblaBearing° · по текущей геопозиции"
- }
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+        super.onCreate(savedInstanceState)
 
- private fun useSelectedCity(reason:String){
-  val city=Store.selectedCity(this);qiblaBearing=Qibla.bearing(city.lat,city.lon)
-  bearingLabel.text="Направление Кыблы: $qiblaBearing° · ${city.name}"
-  status.text="$reason · использую координаты выбранного города"
- }
+        val screenBackground = Color.rgb(248, 248, 250)
+        window.statusBarColor = screenBackground
+        window.navigationBarColor = screenBackground
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
 
- override fun onResume(){super.onResume();rotationSensor?.let{sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI)}}
- override fun onPause(){sensorManager.unregisterListener(this);super.onPause()}
+        sensorManager =
+            getSystemService(Context.SENSOR_SERVICE)
+                    as SensorManager
 
- override fun onSensorChanged(event:SensorEvent){
-  if(event.sensor.type!=Sensor.TYPE_ROTATION_VECTOR)return
-  val raw=FloatArray(9);SensorManager.getRotationMatrixFromVector(raw,event.values)
-  val adjusted=FloatArray(9)
-  val screenRotation=if(Build.VERSION.SDK_INT>=30)display?.rotation?:Surface.ROTATION_0 else @Suppress("DEPRECATION") windowManager.defaultDisplay.rotation
-  when(screenRotation){
-   Surface.ROTATION_90->SensorManager.remapCoordinateSystem(raw,SensorManager.AXIS_Y,SensorManager.AXIS_MINUS_X,adjusted)
-   Surface.ROTATION_180->SensorManager.remapCoordinateSystem(raw,SensorManager.AXIS_MINUS_X,SensorManager.AXIS_MINUS_Y,adjusted)
-   Surface.ROTATION_270->SensorManager.remapCoordinateSystem(raw,SensorManager.AXIS_MINUS_Y,SensorManager.AXIS_X,adjusted)
-   else->System.arraycopy(raw,0,adjusted,0,9)
-  }
-  val orientation=FloatArray(3);SensorManager.getOrientation(adjusted,orientation)
-  val azimuth=(Math.toDegrees(orientation[0].toDouble()).toFloat()+360f)%360f
-  val target=(qiblaBearing-azimuth+360f)%360f
-  var delta=target-(currentRotation%360f);if(delta>180f)delta-=360f;if(delta< -180f)delta+=360f
-  currentRotation+=delta*.18f;arrow.rotation=currentRotation
-  val difference=abs(((qiblaBearing-azimuth+540f)%360f)-180f)
-  heading.text=if(difference<=4f)"Направление Кыблы ✓" else "Кыбла · $qiblaBearing°"
-  status.text="Направление телефона: ${azimuth.roundToInt()}°"
- }
+        locationManager =
+            getSystemService(Context.LOCATION_SERVICE)
+                    as LocationManager
 
- override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int)=Unit
- private fun label(value:String,size:Float,color:Int,bold:Boolean=false)=TextView(this).apply{text=value;textSize=size;setTextColor(color);if(bold)setTypeface(typeface,Typeface.BOLD)}
- private fun space(height:Int)=Space(this).apply{layoutParams=LinearLayout.LayoutParams(1,dp(height))}
- private fun dp(value:Int)=(value*resources.displayMetrics.density+.5f).toInt()
+        rotationSensor =
+            sensorManager.getDefaultSensor(
+                Sensor.TYPE_ROTATION_VECTOR
+            )
+
+        buildScreen()
+
+        requestLocationIfNeeded()
+    }
+
+    private fun buildScreen() {
+
+        val root =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    dp(24),
+                    dp(42),
+                    dp(24),
+                    dp(30)
+                )
+
+                setBackgroundColor(
+                    Color.rgb(
+                        248,
+                        248,
+                        250
+                    )
+                )
+            }
+
+        val top =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.HORIZONTAL
+
+                gravity =
+                    Gravity.CENTER_VERTICAL
+            }
+
+        val back =
+            Button(this).apply {
+
+                text = "←"
+                textSize = 20f
+                isAllCaps = false
+
+                setOnClickListener {
+                    finish()
+                }
+            }
+
+        top.addView(back)
+
+        top.addView(
+            label(
+                "Кыбла",
+                27f,
+                true
+            ),
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dp(12)
+            }
+        )
+
+        root.addView(
+            top,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        root.addView(space(32))
+
+        bearingText =
+            label(
+                "Определяем ваше местоположение…",
+                15f
+            )
+
+        bearingText.gravity =
+            Gravity.CENTER
+
+        root.addView(bearingText)
+
+        root.addView(space(28))
+
+        val compass =
+            FrameLayout(this).apply {
+
+                background =
+                    android.graphics.drawable.GradientDrawable().apply {
+
+                        shape =
+                            android.graphics.drawable.GradientDrawable.OVAL
+
+                        setColor(Color.WHITE)
+
+                        setStroke(
+                            dp(1),
+                            Color.rgb(
+                                220,
+                                224,
+                                222
+                            )
+                        )
+                    }
+
+                elevation =
+                    dp(3).toFloat()
+            }
+
+        arrow =
+            TextView(this).apply {
+
+                text = "↑"
+                textSize = 105f
+
+                gravity =
+                    Gravity.CENTER
+
+                setTextColor(
+                    Color.rgb(
+                        72,
+                        96,
+                        83
+                    )
+                )
+            }
+
+        compass.addView(
+            arrow,
+            FrameLayout.LayoutParams(
+                dp(240),
+                dp(240),
+                Gravity.CENTER
+            )
+        )
+
+        val north =
+            TextView(this).apply {
+
+                text = "С"
+                textSize = 15f
+
+                gravity =
+                    Gravity.CENTER
+
+                setTypeface(
+                    typeface,
+                    Typeface.BOLD
+                )
+
+                setTextColor(
+                    Color.rgb(
+                        100,
+                        100,
+                        105
+                    )
+                )
+            }
+
+        compass.addView(
+            north,
+            FrameLayout.LayoutParams(
+                dp(40),
+                dp(40),
+                Gravity.TOP or
+                    Gravity.CENTER_HORIZONTAL
+            )
+        )
+
+        root.addView(
+            compass,
+            LinearLayout.LayoutParams(
+                dp(270),
+                dp(270)
+            )
+        )
+
+        root.addView(space(28))
+
+        headingText =
+            label(
+                "Подготовка компаса…",
+                18f,
+                true
+            )
+
+        headingText.gravity =
+            Gravity.CENTER
+
+        root.addView(headingText)
+
+        root.addView(space(9))
+
+        statusText =
+            label(
+                "",
+                14f
+            )
+
+        statusText.gravity =
+            Gravity.CENTER
+
+        root.addView(statusText)
+
+        if (rotationSensor == null) {
+
+            headingText.text =
+                "Датчик компаса недоступен"
+
+            statusText.text =
+                "На этом устройстве не удалось получить данные ориентации."
+        }
+
+        setContentView(root)
+    }
+
+    private fun space(h: Int) =
+        Space(this).apply {
+
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    1,
+                    dp(h)
+                )
+        }
+
+    private fun requestLocationIfNeeded() {
+
+        val fine =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        val coarse =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (fine || coarse) {
+
+            findLocation()
+
+        } else {
+
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun findLocation() {
+
+        val fine =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        val coarse =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fine && !coarse) {
+            return
+        }
+
+        bearingText.text =
+            "Определяем ваше местоположение…"
+
+        try {
+
+            val providers =
+                locationManager.getProviders(true)
+
+            val lastLocations =
+                providers.mapNotNull { provider ->
+
+                    try {
+                        locationManager
+                            .getLastKnownLocation(provider)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+
+            val best =
+                lastLocations.maxByOrNull {
+                    it.time
+                }
+
+            if (best != null) {
+
+                useLocation(best)
+
+            } else {
+
+                requestFreshLocation()
+            }
+
+        } catch (_: Exception) {
+
+            requestFreshLocation()
+        }
+    }
+
+    private fun requestFreshLocation() {
+
+        val fine =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        val coarse =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fine && !coarse) {
+            return
+        }
+
+        val provider =
+            when {
+
+                locationManager.isProviderEnabled(
+                    LocationManager.GPS_PROVIDER
+                ) ->
+                    LocationManager.GPS_PROVIDER
+
+                locationManager.isProviderEnabled(
+                    LocationManager.NETWORK_PROVIDER
+                ) ->
+                    LocationManager.NETWORK_PROVIDER
+
+                else -> null
+            }
+
+        if (provider == null) {
+
+            qiblaBearing = null
+
+            headingText.text =
+                "Включите геолокацию"
+
+            bearingText.text = ""
+
+            statusText.text =
+                "Службы определения местоположения выключены."
+
+            return
+        }
+
+        try {
+
+            @Suppress("DEPRECATION")
+            locationManager.requestSingleUpdate(
+                provider,
+                object : LocationListener {
+                    override fun onLocationChanged(location: Location) {
+                        useLocation(location)
+                    }
+
+                    @Deprecated("Deprecated in Android")
+                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+
+                    override fun onProviderEnabled(provider: String) = Unit
+
+                    override fun onProviderDisabled(provider: String) = Unit
+                },
+                Looper.getMainLooper()
+            )
+
+        } catch (_: SecurityException) {
+
+            qiblaBearing = null
+
+            headingText.text =
+                "Нет доступа к местоположению"
+        }
+    }
+
+    private fun useLocation(
+        location: Location
+    ) {
+
+        qiblaBearing =
+            Qibla.bearing(
+                location.latitude,
+                location.longitude
+            )
+
+        bearingText.text =
+            "Направление Кыблы: ${qiblaBearing}°"
+
+        headingText.text =
+            "Кыбла определена"
+
+        statusText.text =
+            "Поворачивайте телефон — стрелка указывает направление."
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        rotationSensor?.let {
+
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_UI
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(
+        event: SensorEvent
+    ) {
+
+        if (
+            event.sensor.type !=
+            Sensor.TYPE_ROTATION_VECTOR
+        ) return
+
+        val bearing =
+            qiblaBearing ?: return
+
+        val rawMatrix =
+            FloatArray(9)
+
+        SensorManager
+            .getRotationMatrixFromVector(
+                rawMatrix,
+                event.values
+            )
+
+        @Suppress("DEPRECATION")
+        val rotation = if (Build.VERSION.SDK_INT >= 30) {
+            display?.rotation ?: Surface.ROTATION_0
+        } else {
+            windowManager.defaultDisplay.rotation
+        }
+
+        val adjustedMatrix =
+            FloatArray(9)
+
+        when (rotation) {
+
+            Surface.ROTATION_90 ->
+                SensorManager.remapCoordinateSystem(
+                    rawMatrix,
+                    SensorManager.AXIS_Y,
+                    SensorManager.AXIS_MINUS_X,
+                    adjustedMatrix
+                )
+
+            Surface.ROTATION_180 ->
+                SensorManager.remapCoordinateSystem(
+                    rawMatrix,
+                    SensorManager.AXIS_MINUS_X,
+                    SensorManager.AXIS_MINUS_Y,
+                    adjustedMatrix
+                )
+
+            Surface.ROTATION_270 ->
+                SensorManager.remapCoordinateSystem(
+                    rawMatrix,
+                    SensorManager.AXIS_MINUS_Y,
+                    SensorManager.AXIS_X,
+                    adjustedMatrix
+                )
+
+            else ->
+                System.arraycopy(
+                    rawMatrix,
+                    0,
+                    adjustedMatrix,
+                    0,
+                    9
+                )
+        }
+
+        val orientation =
+            FloatArray(3)
+
+        SensorManager.getOrientation(
+            adjustedMatrix,
+            orientation
+        )
+
+        var azimuth =
+            Math.toDegrees(
+                orientation[0].toDouble()
+            ).toFloat()
+
+        azimuth =
+            (azimuth + 360f) % 360f
+
+        val target =
+            (bearing - azimuth + 360f) % 360f
+
+        var delta =
+            target -
+                (currentRotation % 360f)
+
+        if (delta > 180f)
+            delta -= 360f
+
+        if (delta < -180f)
+            delta += 360f
+
+        // Небольшое сглаживание движения стрелки.
+        currentRotation +=
+            delta * 0.18f
+
+        arrow.rotation =
+            currentRotation
+
+        val difference =
+            abs(
+                ((bearing - azimuth + 540f) % 360f) - 180f
+            )
+
+        headingText.text =
+            if (difference <= 4f) {
+                "Направление Кыблы ✓"
+            } else {
+                "Кыбла · $bearing°"
+            }
+
+        statusText.text =
+            "Направление телефона: ${azimuth.roundToInt()}°"
+    }
+
+    override fun onAccuracyChanged(
+        sensor: Sensor?,
+        accuracy: Int
+    ) {
+    }
 }
