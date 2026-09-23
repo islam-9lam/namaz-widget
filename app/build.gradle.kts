@@ -9,8 +9,8 @@ android {
         applicationId = "com.islam9lam.namazwidget"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 5
+        versionName = "0.4.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -23,5 +23,6 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("org.jsoup:jsoup:1.18.3")
+    implementation("com.batoulapps.adhan:adhan:1.2.1")
     testImplementation("junit:junit:4.13.2")
 }

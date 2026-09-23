@@ -3,6 +3,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:theme="@style/Theme.NamazWidget"
         android:label="Время намаза"
@@ -14,9 +18,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <receiver android:name=".PrayerWidget" android:exported="true">
+        <activity android:name=".QiblaActivity" android:screenOrientation="portrait" android:exported="false"/>
+        <receiver android:name=".PrayerWidget" android:exported="true" android:label="Время намаза · 4×1">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_widget_info"/>
+        </receiver>
+        <receiver android:name=".PrayerWidgetLarge" android:exported="true" android:label="Время намаза · 4×2">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_widget_large_info"/>
         </receiver>
         <receiver android:name=".AodActionReceiver" android:exported="false"/>
         <receiver android:name=".AodRestoreReceiver" android:exported="false">
@@ -27,5 +36,8 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
             </intent-filter>
         </receiver>
+        <service android:name=".PrayerAodService" android:exported="false" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Displays a user-enabled ongoing countdown to the next daily prayer."/>
+        </service>
     </application>
 </manifest>

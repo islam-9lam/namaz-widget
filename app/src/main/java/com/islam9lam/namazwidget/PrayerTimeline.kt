@@ -6,6 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
+import java.time.ZoneId
 
 data class PrayerMoment(val name:String,val time:LocalDateTime)
 data class PrayerState(val current:PrayerMoment,val next:PrayerMoment,val progress:Int)
@@ -13,16 +14,18 @@ data class PrayerState(val current:PrayerMoment,val next:PrayerMoment,val progre
 object PrayerTimeline {
  private val names=listOf("Фаджр","Зухр","Аср","Магриб","Иша")
 
- fun now(context:Context,at:LocalDateTime=LocalDateTime.now()):PrayerState?{
-  val city=Store.city(context)
-  fun day(date:LocalDate)=Store.load(context,"$city-${YearMonth.from(date)}").find{it.day==date.dayOfMonth}
-  return calculate(at,day(at.toLocalDate().minusDays(1)),day(at.toLocalDate()),day(at.toLocalDate().plusDays(1)))
+ fun now(context:Context,at:LocalDateTime=cityNow(context)):PrayerState?{
+  val city=Store.selectedCity(context)
+  fun stored(date:LocalDate)=Store.load(context,"${city.name}-${YearMonth.from(date)}").find{it.day==date.dayOfMonth}
+  return calculate(at,stored(at.toLocalDate().minusDays(1)),stored(at.toLocalDate()),stored(at.toLocalDate().plusDays(1)),Store.asrMethod(context)=="hanafi")
  }
 
- fun calculate(at:LocalDateTime,yesterday:PrayerDay?,today:PrayerDay?,tomorrow:PrayerDay?):PrayerState?{
+ fun cityNow(context:Context)=LocalDateTime.now(ZoneId.of(Store.selectedCity(context).timeZone))
+
+ fun calculate(at:LocalDateTime,yesterday:PrayerDay?,today:PrayerDay?,tomorrow:PrayerDay?,hanafi:Boolean=false):PrayerState?{
   today?:return null
   val date=at.toLocalDate()
-  val todayTimes=times(today)
+  val todayTimes=times(today,hanafi)
   val index=todayTimes.indexOfLast{!at.toLocalTime().isBefore(it)}
   val current:PrayerMoment
   val next:PrayerMoment
@@ -45,5 +48,5 @@ object PrayerTimeline {
   return PrayerState(current,next,((elapsed*100)/total).toInt().coerceIn(0,100))
  }
 
- private fun times(day:PrayerDay)=listOf(day.fajr,day.dhuhr,day.asr,day.maghrib,day.isha).map(LocalTime::parse)
+ private fun times(day:PrayerDay,hanafi:Boolean)=listOf(day.fajr,day.dhuhr,if(hanafi)day.asrHanafi?:day.asr else day.asr,day.maghrib,day.isha).map(LocalTime::parse)
 }

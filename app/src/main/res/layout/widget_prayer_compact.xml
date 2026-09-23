@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root"
+ android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal"
+ android:gravity="center_vertical" android:paddingLeft="12dp" android:paddingTop="6dp"
+ android:paddingRight="12dp" android:paddingBottom="6dp" android:background="@drawable/widget_bg">
+ <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.9" android:orientation="vertical" android:gravity="center_vertical">
+  <TextView android:id="@+id/city" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end" android:textColor="#FFDDBA6B" android:textStyle="bold" android:textSize="10sp"/>
+  <TextView android:id="@+id/currentName" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:textColor="#BFFFFFFF" android:textSize="8sp"/>
+  <TextView android:id="@+id/currentTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:textColor="#FFFFFFFF" android:textStyle="bold" android:textSize="22sp"/>
+ </LinearLayout>
+ <TextView android:layout_width="1dp" android:layout_height="30dp" android:layout_marginLeft="8dp" android:layout_marginRight="10dp" android:background="#45DDBA6B"/>
+ <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.35" android:orientation="vertical" android:gravity="center_vertical">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+   <TextView android:id="@+id/nextName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:maxLines="1" android:ellipsize="end" android:textColor="#FFDDBA6B" android:textStyle="bold" android:textSize="9sp"/>
+   <TextView android:id="@+id/qibla" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#AFFFFFFF" android:textSize="8sp"/>
+  </LinearLayout>
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="bottom">
+   <TextView android:id="@+id/nextTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:textColor="#FFFFFFFF" android:textStyle="bold" android:textSize="21sp"/>
+   <TextView android:id="@+id/countdown" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:layout_marginBottom="2dp" android:maxLines="1" android:textColor="#CFFFFFFF" android:textSize="9sp"/>
+  </LinearLayout>
+  <TextView android:id="@+id/others" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end" android:textColor="#9FFFFFFF" android:textSize="8sp"/>
+ </LinearLayout>
+</LinearLayout>
