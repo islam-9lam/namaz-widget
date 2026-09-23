@@ -2,6 +2,7 @@ package com.islam9lam.namazwidget
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Build
@@ -13,10 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.*
-import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.concurrent.TimeUnit
 class MainActivity:AppCompatActivity(){
- private lateinit var aod:MaterialSwitch
+ private lateinit var aod:Switch
  private lateinit var promotion:Button
  private lateinit var status:TextView
  private var enableAodAfterPermission=false
@@ -30,7 +30,13 @@ class MainActivity:AppCompatActivity(){
   spinner.setSelection(names.indexOf(Store.city(this)).coerceAtLeast(0))
   val sync=Button(this).apply{text="Сохранить город и обновить"}
   val aodTitle=TextView(this).apply{text="НА ЭКРАНЕ БЛОКИРОВКИ";textSize=12f;setTextColor(Color.rgb(221,186,107));setPadding(0,28,0,4)}
-  aod=MaterialSwitch(this).apply{text="Следующий намаз · AOD / Now Bar";textSize=17f;setTextColor(Color.WHITE);isChecked=Store.isAodEnabled(this@MainActivity)}
+  aod=Switch(this).apply{
+   text="Следующий намаз · AOD / Now Bar";textSize=17f;setTextColor(Color.WHITE);showText=false
+   isClickable=true;isFocusable=true;isChecked=Store.isAodEnabled(this@MainActivity)
+   val states=arrayOf(intArrayOf(android.R.attr.state_checked),intArrayOf())
+   thumbTintList=ColorStateList(states,intArrayOf(Color.WHITE,Color.rgb(181,204,198)))
+   trackTintList=ColorStateList(states,intArrayOf(Color.rgb(55,134,116),Color.rgb(70,88,84)))
+  }
   val aodNote=TextView(this).apply{text="Показывает название, время и живой обратный отсчёт. На Android 16 система может вывести карточку в Live Updates / Now Bar; на старых версиях — как постоянное уведомление.";textSize=14f;setTextColor(Color.rgb(181,204,198));setPadding(0,6,0,12)}
   promotion=Button(this).apply{text="Разрешить Live Updates / Now Bar";visibility=View.GONE}
   status=TextView(this).apply{text=if(Store.isAodEnabled(this@MainActivity))"Показ включён" else "Показ выключен";textSize=14f;setTextColor(Color.rgb(221,186,107));gravity=Gravity.START;setPadding(0,12,0,0)}
