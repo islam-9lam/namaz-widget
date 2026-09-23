@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
             if (granted && enableAodAfterPermission) {
                 enableAodAfterPermission = false
                 PrayerAod.enable(this)
+                PrayerAod.openPromotionSettingsIfNeeded(this, force = true)
                 showMainScreen()
             } else if (enableAodAfterPermission) {
                 enableAodAfterPermission = false
@@ -83,6 +84,7 @@ class MainActivity : AppCompatActivity() {
                 checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
         ) {
             PrayerAod.enable(this)
+            PrayerAod.openPromotionSettingsIfNeeded(this)
         }
     }
 
@@ -91,6 +93,10 @@ class MainActivity : AppCompatActivity() {
 
         if (::root.isInitialized) {
             showMainScreen()
+        }
+
+        if (Store.isAodEnabled(this)) {
+            PrayerAod.refresh(this)
         }
     }
 
@@ -691,6 +697,10 @@ class MainActivity : AppCompatActivity() {
                         applicationContext
                     )
 
+                    PrayerAod.refresh(
+                        applicationContext
+                    )
+
                     showMainScreen()
                 }
             }
@@ -739,6 +749,10 @@ class MainActivity : AppCompatActivity() {
                     )
 
                     PrayerWidget.refreshAll(
+                        applicationContext
+                    )
+
+                    PrayerAod.refresh(
                         applicationContext
                     )
 
@@ -919,6 +933,7 @@ class MainActivity : AppCompatActivity() {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
                 PrayerAod.enable(this)
+                PrayerAod.openPromotionSettingsIfNeeded(this, force = true)
             }
         }
 

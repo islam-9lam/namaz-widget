@@ -124,6 +124,12 @@ object Store {
  fun setAodEnabled(c:Context,enabled:Boolean)=
   c.getSharedPreferences(PREF,0).edit().putBoolean("aod_enabled",enabled).apply()
 
+ fun liveSettingsPrompted(c:Context)=
+  c.getSharedPreferences(PREF,0).getBoolean("live_settings_prompted",false)
+
+ fun setLiveSettingsPrompted(c:Context,prompted:Boolean)=
+  c.getSharedPreferences(PREF,0).edit().putBoolean("live_settings_prompted",prompted).apply()
+
  fun setLastCalculation(c:Context,value:String)=
   c.getSharedPreferences(PREF,0).edit().putString("last_calculation",value).apply()
 

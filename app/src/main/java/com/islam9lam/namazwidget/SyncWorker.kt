@@ -76,6 +76,13 @@ class SyncWorker(
             applicationContext
         )
 
+        // После смены города или обновления официального расписания
+        // карточка AOD / Now Bar должна сразу получить те же времена,
+        // а не ждать следующего 15-минутного фонового обновления.
+        if (Store.isAodEnabled(applicationContext)) {
+            PrayerAod.refresh(applicationContext)
+        }
+
         Result.success()
 
     } catch (e: Exception) {

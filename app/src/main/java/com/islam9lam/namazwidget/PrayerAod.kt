@@ -1,6 +1,7 @@
 package com.islam9lam.namazwidget
 
 import android.Manifest
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,6 +12,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -57,10 +59,23 @@ object PrayerAod {
 
  fun disable(context:Context){
   Store.setAodEnabled(context,false)
+  Store.setLiveSettingsPrompted(context,false)
   WorkManager.getInstance(context).cancelUniqueWork(PERIODIC_WORK)
   WorkManager.getInstance(context).cancelUniqueWork(TRANSITION_WORK)
   context.stopService(Intent(context,PrayerAodService::class.java))
   NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+ }
+
+ fun openPromotionSettingsIfNeeded(activity:Activity,force:Boolean=false):Boolean{
+  if(Build.VERSION.SDK_INT<36)return false
+  if(NotificationManagerCompat.from(activity).canPostPromotedNotifications())return false
+  if(!force && Store.liveSettingsPrompted(activity))return false
+  val intent=Intent(Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+   .putExtra(Settings.EXTRA_APP_PACKAGE,activity.packageName)
+  if(intent.resolveActivity(activity.packageManager)==null)return false
+  Store.setLiveSettingsPrompted(activity,true)
+  activity.startActivity(intent)
+  return true
  }
 
  fun refresh(context:Context):Boolean{
