@@ -526,7 +526,7 @@ class MainActivity : AppCompatActivity() {
         if (currentPrayer != null) {
             todayHeader.addView(
                 text(
-                    "Сейчас: ${currentPrayer.name} ${currentPrayer.time}",
+                    "${currentPrayer.name} · ${currentPrayer.time}",
                     12f,
                     true,
                     sage
@@ -1475,14 +1475,23 @@ class MainActivity : AppCompatActivity() {
 
         box.addView(space(6))
 
-        val countries =
-            Cities.countries()
+        val customCity =
+            Store.customCity(this)
 
         val currentCity =
-            Store.customCity(this)
+            customCity
                 ?: Cities.find(
                     Store.city(this)
                 )
+
+        // Keep an arbitrary searched city in the selectors even when its
+        // country is not part of the small verified catalog. This lets users
+        // reopen the screen and change Tashkent, Hanoi, Berlin, etc. safely.
+        val countries =
+            CitySelection.countryOptions(
+                customCity,
+                Cities.countries()
+            )
 
         val countrySpinner =
             Spinner(this)
@@ -1495,9 +1504,8 @@ class MainActivity : AppCompatActivity() {
             )
 
         countrySpinner.setSelection(
-            countries.indexOf(
-                currentCity.country
-            ).coerceAtLeast(0)
+            countries.indexOf(currentCity.country)
+                .coerceAtLeast(0)
         )
 
         box.addView(countrySpinner)
@@ -1560,7 +1568,28 @@ class MainActivity : AppCompatActivity() {
         ) {
 
             val cities =
-                Cities.forCountry(country)
+                CitySelection.citiesForCountry(
+                    country,
+                    customCity,
+                    Cities.list
+                )
+
+            if (cities.isEmpty()) {
+                citySpinner.adapter =
+                    ArrayAdapter(
+                        this,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        emptyList<String>()
+                    )
+
+                sourceInfo.text =
+                    "Для этой страны пока нет проверенных городов"
+
+                save.isEnabled = false
+                return
+            }
+
+            save.isEnabled = true
 
             val names =
                 cities.map {
@@ -1589,7 +1618,7 @@ class MainActivity : AppCompatActivity() {
                 cities[index]
 
             sourceInfo.text =
-                "Источник: ${Sources.sourceName(selected.name)}"
+                "Источник: ${Sources.sourceName(selected)}"
         }
 
         fillCities(
@@ -1625,17 +1654,28 @@ class MainActivity : AppCompatActivity() {
                 ]
 
             val cities =
-                Cities.forCountry(country)
+                CitySelection.citiesForCountry(
+                    country,
+                    customCity,
+                    Cities.list
+                )
 
             val selected =
                 cities[
                     citySpinner.selectedItemPosition
                 ]
 
-            Store.setCity(
-                this,
-                selected.name
-            )
+            if (selected == customCity) {
+                Store.setCustomCity(
+                    this,
+                    selected
+                )
+            } else {
+                Store.setCity(
+                    this,
+                    selected.name
+                )
+            }
 
             status.text =
                 "Загрузка расписания…"

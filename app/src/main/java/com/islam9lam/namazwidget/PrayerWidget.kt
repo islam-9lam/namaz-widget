@@ -40,7 +40,7 @@ private object PrayerWidgetRenderer{
    views.setChronometer(R.id.countdown,SystemClock.elapsedRealtime(),null,false)
    if(layout==R.layout.widget_prayer){views.setTextViewText(R.id.others,"");views.setTextViewText(R.id.qibla,"")}
   }else{
-   views.setTextViewText(R.id.currentLabel,state.label)
+   views.setTextViewText(R.id.currentLabel,if(state.current!=null)"Текущий намаз" else state.label)
    views.setTextViewText(R.id.nextName,state.next.name.uppercase())
    views.setTextViewText(R.id.nextTime,state.next.time.toLocalTime().toString())
    views.setTextViewText(R.id.currentPrayer,state.current?.let{"${it.name.uppercase()}  ${it.time.toLocalTime()}"}?:"")

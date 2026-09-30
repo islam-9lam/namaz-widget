@@ -78,7 +78,7 @@ object PrayerAod {
   return true
  }
 
- fun refresh(context:Context):Boolean{
+ fun refresh(context:Context,scheduleNextTransition:Boolean=true):Boolean{
   if(!Store.isAodEnabled(context))return false
   if(Build.VERSION.SDK_INT>=33 && ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return false
   prepareChannel(context)
@@ -107,15 +107,18 @@ object PrayerAod {
    val endMillis=state.next.time.atZone(ZoneId.of(city.timeZone)).toInstant().toEpochMilli()
    val remaining=Duration.between(PrayerTimeline.cityNow(context),state.next.time).toMinutes().coerceAtLeast(0)
    builder.setContentTitle("${state.next.name} · $nextTime")
-    .setContentText("${city.name} · после ${state.current.name} · осталось ${durationText(remaining)}")
+    .setContentText("${city.name} · ${state.current.name} · осталось ${durationText(remaining)}")
     .setSubText("Следующий намаз")
     .setWhen(endMillis)
     .setShowWhen(true)
     .setUsesChronometer(true)
     .setChronometerCountDown(true)
-    .setShortCriticalText(nextTime)
+    // Samsung uses shortCriticalText as the second line of the compact
+    // Now Bar card.  Showing nextTime here duplicated the title; a compact
+    // remaining duration is more useful and still fits the small card.
+    .setShortCriticalText(compactDurationText(remaining))
     .setStyle(progressStyle(context,state.progress))
-   scheduleTransition(context,remaining)
+   if(scheduleNextTransition) scheduleTransition(context,remaining)
   }
   NotificationManagerCompat.from(context).notify(NOTIFICATION_ID,builder.build())
   return true
@@ -182,6 +185,12 @@ object PrayerAod {
   minutes<60->"$minutes мин"
   minutes%60==0L->"${minutes/60} ч"
   else->"${minutes/60} ч ${minutes%60} мин"
+ }
+
+ internal fun compactDurationText(minutes:Long)=when{
+  minutes<60->"${minutes}м"
+  minutes%60==0L->"${minutes/60}ч"
+  else->"${minutes/60}ч ${minutes%60}м"
  }
 }
 
